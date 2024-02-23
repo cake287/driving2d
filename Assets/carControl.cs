@@ -8,6 +8,7 @@ public class CarControl : MonoBehaviour
     //public Vector2 velocity { get; private set; } = Vector2.zero;
     public Vector2 velocity = Vector2.zero; // for debugging only
     private Vector2 acceleration = Vector2.zero;
+    public Vector2 bodyDir = Vector2.up; // direction of the body of the car
 
     public float gearRatio = 0;
     public float engineForce = 0;
@@ -22,8 +23,16 @@ public class CarControl : MonoBehaviour
     public float constBraking = 7000;
     public float constMaxEngineTorque = 2000;
 
+    float wheelBase = 2;
+    float maxSteerAngle = 50;
 
     public const float mass = 1000;
+
+    
+    Vector2 rotateVec2(Vector2 v, float a)
+    {
+        return Quaternion.AngleAxis(a, Vector3.forward) * v;
+    }
 
 
     void Update()
@@ -32,30 +41,33 @@ public class CarControl : MonoBehaviour
         accelBrakeInput = Input.GetAxis("Vertical");
         steerInput = Input.GetAxis("Horizontal");
 
-        
-
-        Vector2 carDir = Vector2.up; // direction of the body of the car
-
+        float steerAngle = -steerInput * maxSteerAngle;
 
         // longitudinal (forward/back) forces
 
-        gearRatio = Mathf.Clamp(4 / velocity.magnitude, 0.2f, 2); // simulating changing up gears as speed increases (effectively a continuously variable trans)
+        gearRatio = Mathf.Clamp(4 / velocity.magnitude, 0.2f, 2); // simulating changing up gears as speed increases (effectively a continuously variable trans) // TODO change to linear model dumbass
         engineForce = constMaxEngineTorque * gearRatio * Mathf.Max(0, accelBrakeInput);
-        Vector2 tractiveForce =  engineForce * carDir;
+        Vector2 tractiveForce =  engineForce * bodyDir;
 
-        Vector2 brakingForce = -constBraking * Mathf.Max(0, -accelBrakeInput) * velocity.normalized;
+        Vector2 brakingForce = -constBraking * Mathf.Max(0, -accelBrakeInput) * velocity.normalized; // TODO - braking should only apply to the component of velocity in the direction of the car's body
 
         Vector2 dragForce = -constDrag * velocity * velocity.magnitude;
         Vector2 rollingResistanceForce = -constRollingResistance * velocity;
 
-
-
         //float weightOnFrontWheels = 0.5f*mass*10 - 0.2*mass*() 
 
-
-
-
         Vector2 longForce = tractiveForce + brakingForce + dragForce + rollingResistanceForce;
+
+
+        float angularVelocity = velocity.magnitude * Mathf.Sin(steerAngle * Mathf.Deg2Rad) * Mathf.Rad2Deg / wheelBase;
+
+        bodyDir = rotateVec2(bodyDir, angularVelocity * Time.deltaTime);
+        velocity = rotateVec2(velocity, angularVelocity * Time.deltaTime);
+        transform.Rotate(Vector3.forward, angularVelocity * Time.deltaTime);
+
+
+        //float slipAngle = Mathf.Acos(Vector2.Dot(velocity, bodyDir) / (velocity.magnitude * bodyDir.magnitude));
+
 
         acceleration = longForce / mass;
 
