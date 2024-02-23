@@ -10,7 +10,7 @@ public class CarControl : MonoBehaviour
     private Vector2 acceleration = Vector2.zero;
     public Vector2 bodyDir = Vector2.up; // direction of the body of the car
 
-    public float gearRatio = 0;
+
     public float engineForce = 0;
 
 
@@ -18,22 +18,41 @@ public class CarControl : MonoBehaviour
     private float steerInput = 0;
 
 
-    public float constDrag = 1f;
-    public float constRollingResistance = 5;
-    public float constBraking = 7000;
-    public float constMaxEngineTorque = 2000;
+
+    public float maxSpeed = 15;
+    public float maxEngineTorque = 6000;
+    public AnimationCurve enginePower;
+
+
+
+    public float maxLongFriction = 500;
+
+
+    public float braking = 10000;
+
 
     float wheelBase = 2;
     float maxSteerAngle = 50;
 
     public const float mass = 1000;
 
-    
     Vector2 rotateVec2(Vector2 v, float a)
     {
         return Quaternion.AngleAxis(a, Vector3.forward) * v;
     }
 
+
+    private void Start()
+    {
+
+        Keyframe[] engineKeyFrames =
+        {
+            new Keyframe(0, 0.5f, 4, 4, 0, 0),
+            new Keyframe(0.25f, 0.5f, 4, 4, 0, 0),
+            new Keyframe(0, 0.5f, 4, 4, 0, 0),
+        };
+
+    }
 
     void Update()
     {
@@ -45,18 +64,19 @@ public class CarControl : MonoBehaviour
 
         // longitudinal (forward/back) forces
 
-        gearRatio = Mathf.Clamp(4 / velocity.magnitude, 0.2f, 2); // simulating changing up gears as speed increases (effectively a continuously variable trans) // TODO change to linear model dumbass
-        engineForce = constMaxEngineTorque * gearRatio * Mathf.Max(0, accelBrakeInput);
+        engineForce = maxEngineTorque * enginePower.Evaluate(velocity.magnitude / maxSpeed) * Mathf.Max(0, accelBrakeInput);
         Vector2 tractiveForce =  engineForce * bodyDir;
 
-        Vector2 brakingForce = -constBraking * Mathf.Max(0, -accelBrakeInput) * velocity.normalized; // TODO - braking should only apply to the component of velocity in the direction of the car's body
+        Vector2 brakingForce = -braking * Mathf.Max(0, -accelBrakeInput) * velocity.normalized; // TODO - braking should only apply to the component of velocity in the direction of the car's body
 
-        Vector2 dragForce = -constDrag * velocity * velocity.magnitude;
-        Vector2 rollingResistanceForce = -constRollingResistance * velocity;
+
+        Vector2 friction = -maxLongFriction * velocity; 
+        friction *= 1 - Mathf.Abs(accelBrakeInput); // don't include friction if we're accelerating or braking. makes it easier to change driving behaviour since you only need to change one variable
+        //friction *= 1 + 0.01f / Mathf.Max(velocity.magnitude, 0.001f); // when speed is low, apply lots of friction so the car stops succinctly // THIS DOESNT SEEM TO DO ANYTHING >:(
 
         //float weightOnFrontWheels = 0.5f*mass*10 - 0.2*mass*() 
 
-        Vector2 longForce = tractiveForce + brakingForce + dragForce + rollingResistanceForce;
+        Vector2 longForce = tractiveForce + brakingForce + friction;
 
 
         float angularVelocity = velocity.magnitude * Mathf.Sin(steerAngle * Mathf.Deg2Rad) * Mathf.Rad2Deg / wheelBase;

@@ -260,12 +260,42 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   velocity: {x: 0, y: 0}
-  gearRatio: 0
+  bodyDir: {x: 0, y: 1}
   engineForce: 0
-  constDrag: 1
-  constRollingResistance: 5
-  constBraking: 7000
-  constMaxEngineTorque: 2000
+  maxSpeed: 15
+  maxEngineTorque: 2000
+  enginePower:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0.8561303
+      inSlope: 1.5729083
+      outSlope: 1.5729083
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0.05698006
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: -0.8561303
+      outSlope: -0.8561303
+      tangentMode: 34
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  maxLongFriction: 500
+  frictionApplication:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  braking: 7000
 --- !u!212 &1423582315
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -328,7 +358,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -0.1, y: -0.2, z: -1}
-  m_LocalScale: {x: 1.0342, y: 1, z: 1}
+  m_LocalScale: {x: 1, y: 2, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
