@@ -32,9 +32,19 @@ public class CarControl : MonoBehaviour
 
 
     float wheelBase = 2;
-    float maxSteerAngle = 50;
+    public float maxSteerAngle = 40;
 
     public const float mass = 1000;
+
+    public Transform wheelFrontLeft;
+    public Transform wheelFrontRight;
+    public Transform wheelBackLeft;
+    public Transform wheelBackRight;
+
+    public float visualWheelBase  = 0;
+    public float visualAxleWidth  = 0;
+    public float insideSteerAngle = 0;
+    public float steerAngle = 0;
 
     Vector2 rotateVec2(Vector2 v, float a)
     {
@@ -52,6 +62,11 @@ public class CarControl : MonoBehaviour
             new Keyframe(0, 0.5f, 4, 4, 0, 0),
         };
 
+
+        wheelFrontLeft = transform.Find("wheelFrontLeft");
+        wheelFrontRight = transform.Find("wheelFrontRight");
+        wheelBackLeft = transform.Find("wheelBackLeft");
+        wheelBackRight = transform.Find("wheelBackRight");
     }
 
     void Update()
@@ -60,7 +75,7 @@ public class CarControl : MonoBehaviour
         accelBrakeInput = Input.GetAxis("Vertical");
         steerInput = Input.GetAxis("Horizontal");
 
-        float steerAngle = -steerInput * maxSteerAngle;
+        steerAngle = -steerInput * maxSteerAngle;
 
         // longitudinal (forward/back) forces
 
@@ -79,11 +94,13 @@ public class CarControl : MonoBehaviour
         Vector2 longForce = tractiveForce + brakingForce + friction;
 
 
-        float angularVelocity = velocity.magnitude * Mathf.Sin(steerAngle * Mathf.Deg2Rad) * Mathf.Rad2Deg / wheelBase;
 
+        float angularVelocity = velocity.magnitude * Mathf.Sin(steerAngle * Mathf.Deg2Rad) * Mathf.Rad2Deg / wheelBase;
         bodyDir = rotateVec2(bodyDir, angularVelocity * Time.deltaTime);
-        velocity = rotateVec2(velocity, angularVelocity * Time.deltaTime);
-        transform.Rotate(Vector3.forward, angularVelocity * Time.deltaTime);
+
+        Vector2 frontWheelDir = rotateVec2(bodyDir, steerAngle).normalized;
+        velocity = velocity.magnitude * frontWheelDir;
+
 
 
         //float slipAngle = Mathf.Acos(Vector2.Dot(velocity, bodyDir) / (velocity.magnitude * bodyDir.magnitude));
@@ -96,6 +113,28 @@ public class CarControl : MonoBehaviour
         Func<Vector2, Vector3> Vec2to3 = v => new Vector3(v.x, v.y, 0);
         transform.position += Vec2to3(velocity * Time.deltaTime);
 
+
+
+        // update visual rotation of the car and front wheels
+        transform.Rotate(Vector3.forward, angularVelocity * Time.deltaTime);
+
+        Transform outsideWheel = steerAngle < 0 ? wheelFrontLeft : wheelFrontRight;
+        Transform insideWheel = steerAngle >= 0 ? wheelFrontLeft : wheelFrontRight;
+        outsideWheel.localScale = new Vector3(1, 2, 1);
+        insideWheel.localScale = new Vector3(1, 1, 1);
+        outsideWheel.SetLocalPositionAndRotation(outsideWheel.localPosition, Quaternion.Euler(0, 0, steerAngle));
+
+        // increase the angle of the wheel on the inside of the curve, since it has a smaller circle path to follow so needs to be tighter
+        visualWheelBase = Mathf.Abs(wheelFrontLeft.localPosition.y - wheelBackLeft.localPosition.y);
+        visualAxleWidth = Mathf.Abs(wheelFrontLeft.localPosition.x - wheelFrontRight.localPosition.x);
+        insideSteerAngle = Mathf.Atan2(visualWheelBase, visualWheelBase / Mathf.Tan(steerAngle * Mathf.Deg2Rad) - visualAxleWidth) * Mathf.Rad2Deg;
+
+        insideWheel.SetLocalPositionAndRotation(insideWheel.localPosition, Quaternion.Euler(0, 0, insideSteerAngle));
+
+        Func<Vector2, Vector2> rot90 = v => new Vector3(v.y, -v.x);
+        Debug.DrawRay(outsideWheel.transform.position, rot90(outsideWheel.transform.up).normalized * 10, Color.blue);
+        Debug.DrawRay(insideWheel.transform.position, -rot90(insideWheel.transform.up).normalized * 10, Color.blue);
+        Debug.DrawRay(wheelBackLeft.transform.position, rot90(wheelBackLeft.transform.up).normalized * 10, Color.blue);
 
     }
 
