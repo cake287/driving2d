@@ -735,6 +735,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   velocity: {x: 0, y: 0}
   bodyDir: {x: 0, y: 1}
+  angularVelocity: 0
+  mass: 1000
   engineForce: 0
   maxSpeed: 15
   maxEngineTorque: 6000
@@ -764,7 +766,50 @@ MonoBehaviour:
     m_RotationOrder: 4
   maxLongFriction: 500
   braking: 10000
-  frontWheels: []
+  maxSteerAngle: 25
+  wheelFrontLeft: {fileID: 0}
+  wheelFrontRight: {fileID: 0}
+  wheelBackLeft: {fileID: 0}
+  wheelBackRight: {fileID: 0}
+  steerAngle: 0
+  latForceBySlipAngle:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0.33333334
+      outSlope: 0.33333334
+      tangentMode: 34
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 3
+      value: 1
+      inSlope: 0.0008323574
+      outSlope: 0.0008323574
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 1
+      outWeight: 0
+    - serializedVersion: 3
+      time: 20
+      value: 0.8
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  maxLatFriction: 100
+  rearSlipAngle: 0
+  rearLatForce: 0
+  frontSlipAngle: 0
+  frontLatForce: 0
 --- !u!212 &1423582315
 SpriteRenderer:
   m_ObjectHideFlags: 0
