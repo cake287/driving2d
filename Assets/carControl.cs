@@ -9,10 +9,12 @@ public class CarControl : MonoBehaviour
     public Vector2 velocity = Vector2.zero; // for debugging only
     private Vector2 acceleration = Vector2.zero;
     public Vector2 bodyDir = Vector2.up; // direction of the body of the car
-    public float angularVelocity = 0;
+    public float angularVelocity = 0; // in degrees/s
 
 
     public float mass = 1000;
+    public float inertia = 10;
+
     public float engineForce = 0;
 
 
@@ -35,15 +37,15 @@ public class CarControl : MonoBehaviour
     public float maxSteerAngle = 25;
 
 
-    public Transform wheelFrontLeft;
-    public Transform wheelFrontRight;
-    public Transform wheelBackLeft;
-    public Transform wheelBackRight;
 
     public float steerAngle = 0;
 
     public AnimationCurve latForceBySlipAngle;
     public float maxLatFriction = 2000;
+
+
+    public float corneringStiffness = 0.3f;
+    public float latFriction = 0.95f;
 
     public float rearSlipAngle = 0;
     public float rearLatForce = 0;
@@ -52,7 +54,12 @@ public class CarControl : MonoBehaviour
     public float frontLatForce = 0;
 
 
-    Vector2 rotateVec2(Vector2 v, float a)
+    public Transform wheelFrontLeft;
+    public Transform wheelFrontRight;
+    public Transform wheelBackLeft;
+    public Transform wheelBackRight;
+        
+    Vector2 rotateVec2(Vector2 v, float a) // angle in degrees
     {
         return Quaternion.AngleAxis(a, Vector3.forward) * v;
     }
@@ -109,6 +116,23 @@ public class CarControl : MonoBehaviour
 
         steerAngle = -steerInput * maxSteerAngle;
 
+
+
+        Vector2 frontWheelDir = rotateVec2(bodyDir, steerAngle).normalized;
+        velocity = velocity.magnitude * frontWheelDir.normalized;
+
+
+        float vLong = Vector2.Dot(velocity, bodyDir); // component of velocity in the direction of the car body
+        float vLat = Vector2.Dot(velocity, rotateVec2(bodyDir, 90));
+        float torque = corneringStiffness * steerAngle - latFriction * angularVelocity;
+        torque *= Mathf.Atan2(vLat, vLong);
+
+        angularVelocity += torque * Time.deltaTime;
+        bodyDir = rotateVec2(bodyDir, angularVelocity * Time.deltaTime);
+
+
+
+
         //float angularVelocity = velocity.magnitude * Mathf.Sin(steerAngle * Mathf.Deg2Rad) * Mathf.Rad2Deg / wheelBase;
         //bodyDir = rotateVec2(bodyDir, angularVelocity * Time.deltaTime);
 
@@ -117,40 +141,44 @@ public class CarControl : MonoBehaviour
 
 
 
-        //float slipAngle = Mathf.Acos(Vector2.Dot(velocity, bodyDir) / (velocity.magnitude * bodyDir.magnitude));
-
-        float vLong = Vector2.Dot(velocity, bodyDir); // component of velocity in the direction of the car body
-        float vLat = Vector2.Dot(velocity, rot90(bodyDir)); // component of velocity in the direction perpendicular to the car body
-        Debug.DrawRay(transform.position, vLong * bodyDir, Color.blue);
-        Debug.DrawRay(transform.position, vLat * rot90(bodyDir), Color.blue);
 
 
-        rearSlipAngle = Mathf.Atan2(vLat + angularVelocity * wheelBase / 2, Mathf.Abs(vLong));
-        rearLatForce = latForceBySlipAngle.Evaluate(Mathf.Abs(rearSlipAngle)) * maxLatFriction * Mathf.Sign(rearSlipAngle);
+        ////float slipAngle = Mathf.Acos(Vector2.Dot(velocity, bodyDir) / (velocity.magnitude * bodyDir.magnitude));
 
-        frontSlipAngle = Mathf.Atan2(vLat + angularVelocity * wheelBase / 2, Mathf.Abs(vLong)) - steerAngle * Mathf.Sign(vLong);
-        frontLatForce = latForceBySlipAngle.Evaluate(Mathf.Abs(frontSlipAngle)) * maxLatFriction * Mathf.Sign(frontSlipAngle);
+        //float vLong = Vector2.Dot(velocity, bodyDir); // component of velocity in the direction of the car body
+        //float vLat = Vector2.Dot(velocity, rotateVec2(bodyDir, 90)); // component of velocity in the direction perpendicular to the car body
 
+        ////Vector2 angularVelocityComp = 
 
-        Vector2 latForce = (rearLatForce + Mathf.Cos(steerAngle) * frontLatForce) * rot90(bodyDir);
+        //rearSlipAngle = Mathf.Rad2Deg * Mathf.Atan2(vLat - angularVelocity * Mathf.Deg2Rad * wheelBase / 2, Mathf.Abs(vLong));
+        //frontSlipAngle = Mathf.Rad2Deg * Mathf.Atan2(vLat + angularVelocity * Mathf.Deg2Rad * wheelBase / 2, Mathf.Abs(vLong)) + steerAngle * Mathf.Sign(vLong);
 
-        float torque = -rearLatForce * wheelBase / 2 + Mathf.Cos(steerAngle) * frontLatForce * wheelBase / 2;
-        angularVelocity += torque * Time.deltaTime;
-        bodyDir = rotateVec2(bodyDir, angularVelocity * Time.deltaTime);
-            
+        ////rearLatForce = latForceBySlipAngle.Evaluate(Mathf.Abs(rearSlipAngle)) * maxLatFriction * Mathf.Sign(rearSlipAngle);
+        ////frontLatForce = latForceBySlipAngle.Evaluate(Mathf.Abs(frontSlipAngle)) * maxLatFriction * Mathf.Sign(frontSlipAngle); 
+        //rearLatForce = corneringStiffness * rearSlipAngle;
+        //frontLatForce = corneringStiffness * frontSlipAngle; 
+
+        //Debug.DrawRay(wheelBackRight.transform.position, rearLatForce / maxLatFriction * rotateVec2(bodyDir, 90), Color.blue);
+        //Debug.DrawRay(wheelFrontRight.transform.position, frontLatForce / maxLatFriction * rotateVec2(bodyDir, 90), Color.blue);
 
 
 
+        //Vector2 latForce = (rearLatForce + Mathf.Cos(steerAngle * Mathf.Deg2Rad) * frontLatForce) * rotateVec2(bodyDir, 90);
 
-        acceleration = (longForce + latForce) / mass;
+        //float torque = -rearLatForce * wheelBase / 2 + Mathf.Cos(steerAngle * Mathf.Deg2Rad) * frontLatForce * wheelBase / 2;
+        //angularVelocity +=  Time.deltaTime * torque / inertia;
+        //bodyDir = rotateVec2(bodyDir, angularVelocity * Time.deltaTime);
+
+
+        //acceleration = (longForce + latForce) / mass;
+
+
+
+        acceleration = longForce / mass;
         velocity += acceleration * Time.deltaTime;
 
         Func<Vector2, Vector3> Vec2to3 = v => new Vector3(v.x, v.y, 0);
         transform.position += Vec2to3(velocity * Time.deltaTime);
-
-
-
-
 
 
 
@@ -175,7 +203,7 @@ public class CarControl : MonoBehaviour
         outsideWheel.SetLocalPositionAndRotation(outsideWheel.localPosition, Quaternion.Euler(0, 0, outsideSteerAngle));
 
 
-
+        //// rays for showing ackerman steering
         //Debug.DrawRay(outsideWheel.transform.position, -Mathf.Sign(steerAngle) * outsideWheel.transform.right.normalized * 10, Color.blue);
         //Debug.DrawRay(insideWheel.transform.position, -Mathf.Sign(steerAngle) * insideWheel.transform.right.normalized * 10, Color.blue);
         //Debug.DrawRay(0.5f * (wheelBackRight.transform.position + wheelBackLeft.transform.position), -Mathf.Sign(steerAngle) * wheelBackRight.transform.right.normalized * turnRadius, Color.blue);
