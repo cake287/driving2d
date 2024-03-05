@@ -1,7 +1,11 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.Splines;
+using Unity.Mathematics;
+using static UnityEditor.PlayerSettings;
 
 public class CarControl : MonoBehaviour
 {
@@ -13,54 +17,32 @@ public class CarControl : MonoBehaviour
 
 
     public float mass = 1000;
-    public float inertia = 10;
-
     public float engineForce = 0;
-
 
     private float accelBrakeInput = 0;
     private float steerInput = 0;
 
-
-
     public float maxSpeed = 15;
     public float maxEngineTorque = 6000;
     public AnimationCurve enginePower;
-
-
+    
     public float maxLongFriction = 500;
-
     public float braking = 10000;
 
 
-    float wheelBase = 2;
     public float maxSteerAngle = 25;
-
-
-
     public float steerAngle = 0;
-
-    public AnimationCurve latForceBySlipAngle;
-    public AnimationCurve rearLatForceBySlipAngle;
-    public float maxLatFriction = 2000;
-
-    public float k = 1;
-    public float b = 1;
-
-    public float corneringStiffness = 10f;
-    public float latFriction = 0.95f;
-
-    public float rearSlipAngle = 0;
-    public float rearLatForce = 0;
-    
-    public float frontSlipAngle = 0;
-    public float frontLatForce = 0;
+    public float maxLatFriction = 6;
+    public float maxLatFrictionHandbrake = 2;
 
 
     public Transform wheelFrontLeft;
     public Transform wheelFrontRight;
     public Transform wheelBackLeft;
     public Transform wheelBackRight;
+
+
+    public Collider track;
         
     Vector2 rotateVec2(Vector2 v, float a) // angle in degrees
     {
@@ -78,12 +60,12 @@ public class CarControl : MonoBehaviour
         Debug.Log(Mathf.Atan2(-1, 0));
 
 
-        Keyframe[] engineKeyFrames =
-        {
-            new Keyframe(0, 0.5f, 4, 4, 0, 0),
-            new Keyframe(0.25f, 0.5f, 4, 4, 0, 0),
-            new Keyframe(0, 0.5f, 4, 4, 0, 0),
-        };
+        //Keyframe[] engineKeyFrames =
+        //{
+        //    new Keyframe(0, 0.5f, 4, 4, 0, 0),
+        //    new Keyframe(0.25f, 0.5f, 4, 4, 0, 0),
+        //    new Keyframe(0, 0.5f, 4, 4, 0, 0),
+        //};
 
 
         wheelFrontLeft = transform.Find("wheelFrontLeft");
@@ -91,11 +73,32 @@ public class CarControl : MonoBehaviour
         wheelBackLeft = transform.Find("wheelBackLeft");
         wheelBackRight = transform.Find("wheelBackRight");
 
-        wheelBase = Mathf.Abs(wheelFrontLeft.localPosition.y - wheelBackLeft.localPosition.y);
+
+
     }
 
     void Update()
     {
+
+        //float3 pos = new float3(transform.position.x, transform.position.y, 0);
+        //float3 nearestPoint = new();
+        //float t;
+        //SplineUtility.GetNearestPoint(track.Spline, pos, out nearestPoint, out t);
+        //Debug.Log(math.distance(pos, nearestPoint));
+        //bool isOnTrack = math.distance(pos, nearestPoint) > 3;
+
+        Vector3 pos = new float3(transform.position.x, transform.position.y, track.transform.position.z);
+        //bool isOnTrack = track.bounds.Contains(pos);
+        RaycastHit temp;
+        bool isOnTrack = track.Raycast(new Ray(transform.position, new(0, 0, -1)), out temp, 100);
+
+        if (!isOnTrack)
+            GetComponent<SpriteRenderer>().color = new Color(1, 0, 0);
+        else
+            GetComponent<SpriteRenderer>().color = new Color(1, 1, 1);
+
+
+
 
         accelBrakeInput = Input.GetAxis("Vertical");
         steerInput = Input.GetAxis("Horizontal");
@@ -114,83 +117,37 @@ public class CarControl : MonoBehaviour
         //friction *= 1 + 0.01f / Mathf.Max(velocity.magnitude, 0.001f); // when speed is low, apply lots of friction so the car stops succinctly // THIS DOESNT SEEM TO DO ANYTHING >:(
 
         Vector2 longForce = tractiveForce + brakingForce + friction;
-
-
+        acceleration = longForce / mass;
+        velocity += acceleration * Time.deltaTime;
 
 
         ////// lateral forces
 
         steerAngle = -steerInput * maxSteerAngle;
 
+        float handbrake = Input.GetKey(KeyCode.Space) ? 1.5f : 1;
+        bodyDir = rotateVec2(bodyDir, steerAngle * 2*(float)Math.Log(velocity.magnitude + 1) * handbrake * Time.deltaTime);
 
-
-        //Vector2 frontWheelDir = rotateVec2(bodyDir, steerAngle).normalized;
-        //velocity = velocity.magnitude * frontWheelDir.normalized;
-
-
-        //float vLong = Vector2.Dot(velocity, bodyDir); // component of velocity in the direction of the car body
-        //float vLat = Vector2.Dot(velocity, rotateVec2(bodyDir, 90));
-        //float torque = corneringStiffness2 * steerAngle - latFriction * angularVelocity;
-        //torque *= Mathf.Atan2(vLat, vLong);
-
-        //angularVelocity += torque * Time.deltaTime;
-        //bodyDir = rotateVec2(bodyDir, angularVelocity * Time.deltaTime);
+        float latFriction = Input.GetKey(KeyCode.Space) ? maxLatFrictionHandbrake : maxLatFriction;
+        velocity = Vector2.Lerp(velocity.normalized, bodyDir, latFriction * Time.deltaTime) * velocity.magnitude;
 
 
 
-
-        //float angularVelocity = velocity.magnitude * Mathf.Sin(steerAngle * Mathf.Deg2Rad) * Mathf.Rad2Deg / wheelBase;
-        //bodyDir = rotateVec2(bodyDir, angularVelocity * Time.deltaTime);
-
-        ////Vector2 frontWheelDir = rotateVec2(bodyDir, steerAngle).normalized;
-        //velocity = velocity.magnitude * bodyDir.normalized;
-
-
-
-
-
-        //float slipAngle = Mathf.Acos(Vector2.Dot(velocity, bodyDir) / (velocity.magnitude * bodyDir.magnitude));
-
-        float vLong = Vector2.Dot(velocity, bodyDir); // component of velocity in the direction of the car body
-        float vLat = Vector2.Dot(velocity, rotateVec2(bodyDir, 90)); // component of velocity in the direction perpendicular to the car body
-
-        //Vector2 angularVelocityComp = 
-        float handbrakeMultiplier = Input.GetKey(KeyCode.Space) ? 0 : 1;
-        rearSlipAngle = Mathf.Rad2Deg * Mathf.Atan2(vLat - k * angularVelocity * Mathf.Deg2Rad * wheelBase / 2, handbrakeMultiplier * Mathf.Abs(vLong)); 
-        frontSlipAngle = Mathf.Rad2Deg * Mathf.Atan2(vLat + k * angularVelocity * Mathf.Deg2Rad * wheelBase / 2, Mathf.Abs(vLong)) - steerAngle * Mathf.Sign(vLong);
-
-        rearLatForce = -b * rearLatForceBySlipAngle.Evaluate(Mathf.Abs(rearSlipAngle)) * maxLatFriction * Mathf.Sign(rearSlipAngle);
-        frontLatForce = -latForceBySlipAngle.Evaluate(Mathf.Abs(frontSlipAngle)) * maxLatFriction * Mathf.Sign(frontSlipAngle);
-        //rearLatForce = -corneringStiffness * rearSlipAngle;
-        //frontLatForce = -corneringStiffness * frontSlipAngle;
-
-        Debug.DrawRay(wheelBackRight.transform.position, rearLatForce / maxLatFriction * rotateVec2(bodyDir, 90), Color.blue);
-        Debug.DrawRay(wheelFrontRight.transform.position, frontLatForce / maxLatFriction * rotateVec2(bodyDir, 90), Color.blue);
-
-
-
-        Vector2 latForce = (rearLatForce + Mathf.Cos(steerAngle * Mathf.Deg2Rad) * frontLatForce) * rotateVec2(bodyDir, 90);
-
-        float torque = -rearLatForce * wheelBase / 2 + Mathf.Cos(steerAngle * Mathf.Deg2Rad) * frontLatForce * wheelBase / 2;
-        angularVelocity += Time.deltaTime * torque / inertia;
-        bodyDir = rotateVec2(bodyDir, angularVelocity * Time.deltaTime);
-
-
-        acceleration = (longForce + latForce) / mass;
-
-
-
-        //acceleration = longForce / mass;
-        velocity += acceleration * Time.deltaTime;
 
         Func<Vector2, Vector3> Vec2to3 = v => new Vector3(v.x, v.y, 0);
         transform.position += Vec2to3(velocity * Time.deltaTime);
 
 
 
+
+
+
+
+
+
         ////// update visual rotation of the car and front wheels
 
-        transform.Rotate(Vector3.forward, angularVelocity * Time.deltaTime);
+        transform.SetLocalPositionAndRotation(transform.position, Quaternion.FromToRotation(Vector3.up, Vec2to3(bodyDir)));
         Debug.DrawRay(transform.position, bodyDir * 2, Color.yellow);
 
         Transform outsideWheel = steerAngle >= 0 ? wheelFrontLeft : wheelFrontRight;
