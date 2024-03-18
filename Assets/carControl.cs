@@ -41,8 +41,12 @@ public class CarControl : MonoBehaviour
     public Transform wheelBackLeft;
     public Transform wheelBackRight;
 
+    public TrailRenderer leftTrail;
+    public TrailRenderer rightTrail;
+
 
     public Collider track;
+    public SplineContainer trackSpline;
         
     Vector2 rotateVec2(Vector2 v, float a) // angle in degrees
     {
@@ -73,24 +77,42 @@ public class CarControl : MonoBehaviour
         wheelBackLeft = transform.Find("wheelBackLeft");
         wheelBackRight = transform.Find("wheelBackRight");
 
+        leftTrail = wheelBackLeft.GetComponentInChildren<TrailRenderer>();
+        rightTrail = wheelBackRight.GetComponentInChildren<TrailRenderer>();
+
+    }
 
 
+    private void DebugDrawPoint(Vector3 p, float diameter = 0.5f)
+    {
+        Debug.DrawRay(new(p.x - diameter, p.y, p.z), 2 * diameter * Vector3.right, Color.magenta);
+        Debug.DrawRay(new(p.x, p.y - diameter, p.z), 2 * diameter * Vector3.up, Color.magenta);
+    }
+    private void DebugDrawPoint(float3 p)
+    {
+        DebugDrawPoint(new Vector3(p.x, p.y, p.z));
     }
 
     void Update()
     {
 
-        //float3 pos = new float3(transform.position.x, transform.position.y, 0);
-        //float3 nearestPoint = new();
-        //float t;
-        //SplineUtility.GetNearestPoint(track.Spline, pos, out nearestPoint, out t);
-        //Debug.Log(math.distance(pos, nearestPoint));
-        //bool isOnTrack = math.distance(pos, nearestPoint) > 3;
+        float3 pos = new float3(transform.position.x, transform.position.y, trackSpline.transform.position.z);
+        float3 nearestPoint = new();
+        float t;
+        SplineUtility.GetNearestPoint(trackSpline.Spline, pos, out nearestPoint, out t);
+        //DebugDrawPoint(new Vector3(nearestPoint.x, nearestPoint.y, 100));
+        bool isOnTrack = math.distance(pos, nearestPoint) > 3;
 
-        Vector3 pos = new float3(transform.position.x, transform.position.y, track.transform.position.z);
+
+
+        DebugDrawPoint(trackSpline.EvaluatePosition(t));
+
+
+        //Vector3 pos = new float3(transform.position.x, transform.position.y, track.transform.position.z);
         //bool isOnTrack = track.bounds.Contains(pos);
-        RaycastHit temp;
-        bool isOnTrack = track.Raycast(new Ray(transform.position, new(0, 0, -1)), out temp, 100);
+
+        //RaycastHit temp;
+        //bool isOnTrack = track.Raycast(new Ray(transform.position, new(0, 0, -1)), out temp, 100);
 
         if (!isOnTrack)
             GetComponent<SpriteRenderer>().color = new Color(1, 0, 0);
@@ -101,7 +123,7 @@ public class CarControl : MonoBehaviour
 
 
         accelBrakeInput = Input.GetAxis("Vertical");
-        steerInput = Input.GetAxis("Horizontal");
+        steerInput = Input.GetAxis("Horizontal"); 
 
 
         ////// longitudinal (forward/back) forces
@@ -171,6 +193,29 @@ public class CarControl : MonoBehaviour
         //Debug.DrawRay(insideWheel.transform.position, -Mathf.Sign(steerAngle) * insideWheel.transform.right.normalized * 10, Color.blue);
         //Debug.DrawRay(0.5f * (wheelBackRight.transform.position + wheelBackLeft.transform.position), -Mathf.Sign(steerAngle) * wheelBackRight.transform.right.normalized * turnRadius, Color.blue);
 
+
+
+
+        //// tyre marks
+
+        float driftAngle = Mathf.Acos(Vector2.Dot(bodyDir.normalized, velocity.normalized)) * Mathf.Rad2Deg;
+        bool showTyreMarks = driftAngle > 20;
+        leftTrail.emitting = showTyreMarks;
+        rightTrail.emitting = showTyreMarks;
+
+
+        //if (driftAngle > 10) // show tyre marks if drift angle is greater than 10 degrees 
+        //{
+        //    if (wheelBackLeft.GetComponentsInChildren<TrailRenderer>().Length != 0) // if there is already a trail component then we are already showing tyre marks and just need to continue them
+        //    {
+        //        TrailRenderer leftTrail = wheelBackLeft.GetComponentInChildren<TrailRenderer>();
+        //        TrailRenderer rightTrail = wheelBackRight.GetComponentInChildren<TrailRenderer>();
+
+        //        leftTrail.AddPosition(wheelBackLeft.position);
+        //        rightTrail.AddPosition(wheelBackRight.position);
+
+        //    }
+        //}
 
     }
 
