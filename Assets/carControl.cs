@@ -27,13 +27,14 @@ public class CarControl : MonoBehaviour
     public AnimationCurve enginePower;
     
     public float maxLongFriction = 500;
-    public float braking = 10000;
+
+    public float maxBrakingForce = 10000;
 
 
     public float maxSteerAngle = 25;
     public float steerAngle = 0;
     public float maxLatFriction = 6;
-    public float maxLatFrictionHandbrake = 2;
+    public float handbrakeLatFrictionMultiplier = 0.33f;
 
 
     public Transform wheelFrontLeft;
@@ -45,7 +46,6 @@ public class CarControl : MonoBehaviour
     public TrailRenderer rightTrail;
 
 
-    public Collider track;
     public SplineContainer trackSpline;
         
     Vector2 rotateVec2(Vector2 v, float a) // angle in degrees
@@ -60,9 +60,6 @@ public class CarControl : MonoBehaviour
 
     private void Start()
     {
-        Debug.Log(Mathf.Atan2(1, 0));
-        Debug.Log(Mathf.Atan2(-1, 0));
-
 
         //Keyframe[] engineKeyFrames =
         //{
@@ -93,31 +90,27 @@ public class CarControl : MonoBehaviour
         DebugDrawPoint(new Vector3(p.x, p.y, p.z));
     }
 
-    void Update()
+    bool isOnTrack()
     {
-
-        float3 pos = new float3(transform.position.x, transform.position.y, trackSpline.transform.position.z);
-        float3 nearestPoint = new();
+        float3 pos = new(transform.position.x, transform.position.y, trackSpline.transform.position.z);
+        float3 nearestPoint = new(); // the point on the spline closest to the car
         float t;
         SplineUtility.GetNearestPoint(trackSpline.Spline, pos, out nearestPoint, out t);
         //DebugDrawPoint(new Vector3(nearestPoint.x, nearestPoint.y, 100));
-        bool isOnTrack = math.distance(pos, nearestPoint) > 3;
+
+
+        float3 curveCentre = SplineUtility.EvaluateCurvatureCenter(trackSpline.Spline, t);
+        //DebugDrawPoint(curveCentre);
+        //Debug.DrawLine(pos, curveCentre);
 
 
 
-        DebugDrawPoint(trackSpline.EvaluatePosition(t));
+        float trackRadius = trackSpline.gameObject.GetComponent<SplineExtrude>().Radius;
+        return math.distance(new float2(pos.x, pos.y), new float2(nearestPoint.x, nearestPoint.y)) > trackRadius;
+    }
 
-
-        //Vector3 pos = new float3(transform.position.x, transform.position.y, track.transform.position.z);
-        //bool isOnTrack = track.bounds.Contains(pos);
-
-        //RaycastHit temp;
-        //bool isOnTrack = track.Raycast(new Ray(transform.position, new(0, 0, -1)), out temp, 100);
-
-        if (!isOnTrack)
-            GetComponent<SpriteRenderer>().color = new Color(1, 0, 0);
-        else
-            GetComponent<SpriteRenderer>().color = new Color(1, 1, 1);
+    void Update()
+    {
 
 
 
@@ -131,7 +124,7 @@ public class CarControl : MonoBehaviour
         engineForce = maxEngineTorque * enginePower.Evaluate(velocity.magnitude / maxSpeed) * Mathf.Max(0, accelBrakeInput);
         Vector2 tractiveForce =  engineForce * bodyDir;
 
-        Vector2 brakingForce = -braking * Mathf.Max(0, -accelBrakeInput) * velocity.normalized; // TODO - braking should only apply to the component of velocity in the direction of the car's body
+        Vector2 brakingForce = -maxBrakingForce * Mathf.Max(0, -accelBrakeInput) * velocity.normalized; // TODO - braking should only apply to the component of velocity in the direction of the car's body
 
 
         Vector2 friction = -maxLongFriction * velocity; 
@@ -147,10 +140,16 @@ public class CarControl : MonoBehaviour
 
         steerAngle = -steerInput * maxSteerAngle;
 
-        float handbrake = Input.GetKey(KeyCode.Space) ? 1.5f : 1;
-        bodyDir = rotateVec2(bodyDir, steerAngle * 2*(float)Math.Log(velocity.magnitude + 1) * handbrake * Time.deltaTime);
+        bool handbrake = Input.GetKey(KeyCode.Space);
 
-        float latFriction = Input.GetKey(KeyCode.Space) ? maxLatFrictionHandbrake : maxLatFriction;
+
+        float angularVelocity = (handbrake ? 3 : 2) * steerAngle * (float)Math.Log(velocity.magnitude + 1);
+        bodyDir = rotateVec2(bodyDir, angularVelocity * Time.deltaTime);
+
+
+        float handbrakeMultiplier = handbrake ? handbrakeLatFrictionMultiplier : 1;
+
+        float latFriction =  handbrakeMultiplier * maxLatFriction;
         velocity = Vector2.Lerp(velocity.normalized, bodyDir, latFriction * Time.deltaTime) * velocity.magnitude;
 
 
@@ -170,7 +169,7 @@ public class CarControl : MonoBehaviour
         ////// update visual rotation of the car and front wheels
 
         transform.SetLocalPositionAndRotation(transform.position, Quaternion.FromToRotation(Vector3.up, Vec2to3(bodyDir)));
-        Debug.DrawRay(transform.position, bodyDir * 2, Color.yellow);
+        //Debug.DrawRay(transform.position, bodyDir * 2, Color.yellow);
 
         Transform outsideWheel = steerAngle >= 0 ? wheelFrontLeft : wheelFrontRight;
         Transform insideWheel = steerAngle < 0 ? wheelFrontLeft : wheelFrontRight;
@@ -204,18 +203,13 @@ public class CarControl : MonoBehaviour
         rightTrail.emitting = showTyreMarks;
 
 
-        //if (driftAngle > 10) // show tyre marks if drift angle is greater than 10 degrees 
-        //{
-        //    if (wheelBackLeft.GetComponentsInChildren<TrailRenderer>().Length != 0) // if there is already a trail component then we are already showing tyre marks and just need to continue them
-        //    {
-        //        TrailRenderer leftTrail = wheelBackLeft.GetComponentInChildren<TrailRenderer>();
-        //        TrailRenderer rightTrail = wheelBackRight.GetComponentInChildren<TrailRenderer>();
 
-        //        leftTrail.AddPosition(wheelBackLeft.position);
-        //        rightTrail.AddPosition(wheelBackRight.position);
 
-        //    }
-        //}
+
+        if (!isOnTrack())
+            GetComponent<SpriteRenderer>().color = new Color(1, 1, 1);
+        else
+            GetComponent<SpriteRenderer>().color = new Color(1, 0, 0);
 
     }
 
