@@ -10,6 +10,8 @@ public class gateGen : MonoBehaviour
     [SerializeField]
     SplineContainer splineContainer;
 
+    List<Vector3> gates;
+
     private void DebugDrawPoint(Vector3 p, Color c, float diameter = 0.5f)
     {
         Debug.DrawRay(new(p.x - diameter, p.y, p.z), 2 * diameter * Vector3.right, c);
@@ -48,27 +50,36 @@ public class gateGen : MonoBehaviour
     {
         Spline spline = splineContainer.Spline;
 
-        int knotCount = spline.Knots.Count();
-        Debug.Log(knotCount);
 
-        Vector3[] gates = new Vector3[knotCount];
+        gates = new List<Vector3>();
 
-        float prevT = getSplineParam(spline.Knots.Last());
+        float gateWidth = GetComponent<SplineExtrude>().Radius + 2f;
+
+        float prevT = getSplineParam(spline.Knots.Last()) - 1;
         int i = 0;
         foreach (BezierKnot thisKnot in spline.Knots)
         {
             float thisT = getSplineParam(thisKnot);
-            float3 thisPos = spline.EvaluatePosition(thisT);
-            DebugDrawPoint(new float2(thisPos.x, thisPos.y), Color.red);
 
-            float midT = (prevT + thisT) * 0.5f;
+            if (i % 2 == 0)
+            {
 
-            float3 gatePos = spline.EvaluatePosition(midT);
-            Debug.Log(gatePos);
-            DebugDrawPoint(new float2(gatePos.x, gatePos.y), Color.magenta);
+                float midT = (prevT + thisT) * 0.5f;
+                if (midT < 0)
+                    midT += 1;
+
+                Vector3 gatePos = spline.EvaluatePosition(midT);
+
+
+                gates.Add(gatePos);
+
+                Vector3 gateDir = Quaternion.AngleAxis(90, Vector3.forward) * spline.EvaluateTangent(midT);
+                gateDir.Normalize();
+
+                Debug.DrawLine(gatePos + gateWidth * gateDir, gatePos - gateWidth * gateDir);
+            }
+
             prevT = thisT;
-
-            gates[i] = gatePos;
             i++;
         }
     }

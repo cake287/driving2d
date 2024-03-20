@@ -96,14 +96,6 @@ public class CarControl : MonoBehaviour
         float3 nearestPoint = new(); // the point on the spline closest to the car
         float t;
         SplineUtility.GetNearestPoint(trackSpline.Spline, pos, out nearestPoint, out t);
-        //DebugDrawPoint(new Vector3(nearestPoint.x, nearestPoint.y, 100));
-
-
-        float3 curveCentre = SplineUtility.EvaluateCurvatureCenter(trackSpline.Spline, t);
-        //DebugDrawPoint(curveCentre);
-        //Debug.DrawLine(pos, curveCentre);
-
-
 
         float trackRadius = trackSpline.gameObject.GetComponent<SplineExtrude>().Radius;
         return math.distance(new float2(pos.x, pos.y), new float2(nearestPoint.x, nearestPoint.y)) > trackRadius;

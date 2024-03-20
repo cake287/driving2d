@@ -278,6 +278,7 @@ GameObject:
   - component: {fileID: 387445895}
   - component: {fileID: 387445894}
   - component: {fileID: 387445893}
+  - component: {fileID: 387445896}
   m_Layer: 0
   m_Name: track
   m_TagString: Untagged
@@ -313,6 +314,60 @@ MonoBehaviour:
   m_Splines:
   - m_EditModeType: 1
     m_Knots:
+    - Position:
+        x: -68.3
+        y: 11.7
+        z: 0
+      TangentIn:
+        x: 0
+        y: 0
+        z: -23.12247
+      TangentOut:
+        x: 0
+        y: 0
+        z: 8.939479
+      Rotation:
+        value:
+          x: 0.46669322
+          y: -0.53122234
+          z: 0.5312224
+          w: -0.4666937
+    - Position:
+        x: -71.5
+        y: -8.799999
+        z: 0
+      TangentIn:
+        x: 0
+        y: 0
+        z: -7.1196322
+      TangentOut:
+        x: 0
+        y: 0
+        z: 4.778254
+      Rotation:
+        value:
+          x: -0.33148232
+          y: 0.6245955
+          z: -0.6245953
+          w: 0.3314823
+    - Position:
+        x: -44.8
+        y: -2.5
+        z: 0
+      TangentIn:
+        x: 0
+        y: 0
+        z: -6.5158386
+      TangentOut:
+        x: 0
+        y: 0
+        z: 8.660547
+      Rotation:
+        value:
+          x: 0.31853777
+          y: -0.631295
+          z: 0.6312951
+          w: -0.3185385
     - Position:
         x: -56.7
         y: -35.8
@@ -410,17 +465,35 @@ MonoBehaviour:
       TangentIn:
         x: 0
         y: 0
-        z: -2.1699982
+        z: -2.180138
       TangentOut:
         x: 0
         y: 0
-        z: 1.4398311
+        z: 15.901259
       Rotation:
         value:
-          x: -0.70710665
-          y: 0
-          z: -0
-          w: 0.7071068
+          x: -0.70709276
+          y: 0.0044469372
+          z: -0.0044469605
+          w: 0.7070928
+    - Position:
+        x: -26.4
+        y: 26.2
+        z: 0
+      TangentIn:
+        x: 0
+        y: 0
+        z: -19.464838
+      TangentOut:
+        x: 0
+        y: 0
+        z: 14.310486
+      Rotation:
+        value:
+          x: 0.0583227
+          y: 0.70469743
+          z: -0.7046975
+          w: -0.05832232
     - Position:
         x: -59.2
         y: 30.3
@@ -428,7 +501,7 @@ MonoBehaviour:
       TangentIn:
         x: 0
         y: 0
-        z: -3.1424007
+        z: -1.5483971
       TangentOut:
         x: 0
         y: 0
@@ -436,75 +509,23 @@ MonoBehaviour:
       Rotation:
         value:
           x: 0.5874829
-          y: 0.3935269
-          z: -0.3935284
-          w: -0.5874827
-    - Position:
-        x: -68.3
-        y: 11.7
-        z: 0
-      TangentIn:
-        x: 0
-        y: 0
-        z: -23.12247
-      TangentOut:
-        x: 0
-        y: 0
-        z: 8.939479
-      Rotation:
-        value:
-          x: 0.46669322
-          y: -0.53122234
-          z: 0.5312224
-          w: -0.4666937
-    - Position:
-        x: -71.5
-        y: -8.799999
-        z: 0
-      TangentIn:
-        x: 0
-        y: 0
-        z: -7.1196322
-      TangentOut:
-        x: 0
-        y: 0
-        z: 4.778254
-      Rotation:
-        value:
-          x: -0.3314823
-          y: 0.6245956
-          z: -0.6245954
-          w: 0.33148238
-    - Position:
-        x: -44.8
-        y: -2.5
-        z: 0
-      TangentIn:
-        x: 0
-        y: 0
-        z: -6.5158386
-      TangentOut:
-        x: 0
-        y: 0
-        z: 8.660547
-      Rotation:
-        value:
-          x: 0.31853777
-          y: -0.631295
-          z: 0.6312951
-          w: -0.3185385
+          y: 0.39352682
+          z: -0.39352843
+          w: -0.58748263
     m_MetaData:
     - Mode: 3
       Tension: 0.5
-    - Mode: 0
-      Tension: 0.5
-    - Mode: 0
-      Tension: 0.5
-    - Mode: 0
+    - Mode: 3
       Tension: 0.5
     - Mode: 3
       Tension: 0.5
     - Mode: 3
+      Tension: 0.5
+    - Mode: 0
+      Tension: 0.5
+    - Mode: 0
+      Tension: 0.5
+    - Mode: 0
       Tension: 0.5
     - Mode: 3
       Tension: 0.5
@@ -611,6 +632,19 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 387445890}
   m_Mesh: {fileID: 4300000, guid: 4c0a71f6abcc26248a8cf09e46254615, type: 2}
+--- !u!114 &387445896
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 387445890}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 89327164c5e13f643b50c5d3b3fa717f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  splineContainer: {fileID: 0}
 --- !u!1 &636047855
 GameObject:
   m_ObjectHideFlags: 0
@@ -926,7 +960,7 @@ Camera:
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 9.351877
+  orthographic size: 16.55233
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
