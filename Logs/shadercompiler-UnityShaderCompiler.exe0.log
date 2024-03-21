@@ -1,10 +1,3 @@
-Base path: 'C:/Program Files/Unity/Hub/Editor/2022.3.20f1/Editor/Data', plugins path 'C:/Program Files/Unity/Hub/Editor/2022.3.20f1/Editor/Data/PlaybackEngines'
+Base path: 'C:/Program Files/Unity/Hub/Editor/2022.3.20f1-x86_64/Editor/Data', plugins path 'C:/Program Files/Unity/Hub/Editor/2022.3.20f1-x86_64/Editor/Data/PlaybackEngines'
 Cmd: initializeCompiler
 
-Cmd: disassembleShader
- name=Unlit/Color platform=d3d11 type=15 mask=6 insize=570 outsize=1155 ok=1
-
-Cmd: disassembleShader
- name=Unlit/Color platform=d3d11 type=17 mask=6 insize=278 outsize=738 ok=1
-
-Cmd: shutdown
