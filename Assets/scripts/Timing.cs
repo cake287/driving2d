@@ -43,8 +43,10 @@ public class Timing : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D gate)
     {
+        // when the car enters a gate's collider, update gate colour (and timing if it's the start/finish gate)
+
         int gateID = int.Parse(gate.gameObject.name.Substring(4));
-        if (gateID == nextGate)
+        if (gateID == nextGate) // ignore car passing through gate if the player has missed a previous gate (or already passed this gate)
         {
             if (gateID == 0)
             {

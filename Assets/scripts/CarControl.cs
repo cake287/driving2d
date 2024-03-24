@@ -95,18 +95,20 @@ public class CarControl : MonoBehaviour
 
     bool isOnTrack(Vector2 p)
     {
+        // get distance from car to the nearest point on the spline. if this is greater than the track radius then the car is off the track
+        
         float3 pos = new(p.x, p.y, trackSpline.transform.position.z);
         float3 nearestPoint = new(); // the point on the spline closest to the car
         float t;
         SplineUtility.GetNearestPoint(trackSpline.Spline, pos, out nearestPoint, out t);
 
         float trackRadius = trackSpline.gameObject.GetComponent<SplineExtrude>().Radius;
+
         return math.distance(new float2(pos.x, pos.y), new float2(nearestPoint.x, nearestPoint.y)) < trackRadius;
     }
 
     void Update()
     {
-        
         bool carOnTrack = isOnTrack(transform.position);
 
 
@@ -121,15 +123,14 @@ public class CarControl : MonoBehaviour
         Vector2 tractiveForce = engineForce * bodyDir;
 
 
-        Vector2 brakingForce = -maxBrakingForce * Mathf.Max(0, -accelBrakeInput) * velocity.normalized; // TODO - braking should only apply to the component of velocity in the direction of the car's body
-
+        Vector2 brakingForce = -maxBrakingForce * Mathf.Max(0, -accelBrakeInput) * velocity.normalized; -
+        
 
         float friction = maxLongFriction;
         friction *= 1 - Mathf.Abs(accelBrakeInput); // don't include friction if we're accelerating or braking. makes it easier to change driving behaviour since you only need to change one variable
 
         friction += carOnTrack ? 0 : grassLongFriction;
-        //friction *= 1 + 0.01f / Mathf.Max(velocity.magnitude, 0.001f); // when speed is low, apply lots of friction so the car stops succinctly // THIS DOESNT SEEM TO DO ANYTHING >:(
-
+        -
         Vector2 frictionForce = friction * velocity;
 
 
@@ -145,8 +146,9 @@ public class CarControl : MonoBehaviour
 
         bool handbrake = Input.GetKey(KeyCode.Space);
 
-        // i don't remember how i came up with this. i tried lots of different methods and this works well
-        float angularVelocity = (handbrake ? 3 : 2) * steerAngle * (float)Math.Log(velocity.magnitude + 1); 
+        // taking the log of the speed makes steering more effective at low speeds and less at higher speeds 
+        float angularVelocity = 2 * steerAngle * (float)Math.Log(velocity.magnitude + 1); 
+        angularVelocity *= handbrake ? 1.5f : 0;
         bodyDir = rotateVec2(bodyDir, angularVelocity * Time.deltaTime);
 
 
@@ -177,7 +179,7 @@ public class CarControl : MonoBehaviour
         Transform outsideWheel = steerAngle >= 0 ? wheelFrontLeft : wheelFrontRight;
         Transform insideWheel = steerAngle < 0 ? wheelFrontLeft : wheelFrontRight;
 
-        // increase the angle of the wheel on the inside of the curve, since it has a smaller circle path to follow so needs to be tighter
+        // increase the angle of the wheel on the inside of the curve, since it has a smaller circle path to follow so needs to be tighter (ackerman steering)
         float visualWheelBase = Mathf.Abs(wheelFrontLeft.localPosition.y - wheelBackLeft.localPosition.y);
         float visualAxleWidth = Mathf.Abs(wheelFrontLeft.localPosition.x - wheelFrontRight.localPosition.x);
 
@@ -190,7 +192,7 @@ public class CarControl : MonoBehaviour
         outsideWheel.SetLocalPositionAndRotation(outsideWheel.localPosition, Quaternion.Euler(0, 0, outsideSteerAngle));
 
 
-        //// rays to ackerman steering is satisfied
+        //// rays to show ackerman steering is satisfied
         //Debug.DrawRay(outsideWheel.transform.position, -Mathf.Sign(steerAngle) * outsideWheel.transform.right.normalized * 10, Color.blue);
         //Debug.DrawRay(insideWheel.transform.position, -Mathf.Sign(steerAngle) * insideWheel.transform.right.normalized * 10, Color.blue);
         //Debug.DrawRay(0.5f * (wheelBackRight.transform.position + wheelBackLeft.transform.position), -Mathf.Sign(steerAngle) * wheelBackRight.transform.right.normalized * turnRadius, Color.blue);
