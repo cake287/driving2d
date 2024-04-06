@@ -1,1 +1,2 @@
-
+*.shader linguist-detectable=false
+*.shader.meta linguist-detectable=false
